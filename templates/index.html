@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat with Your Documents – FLAN-T5</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="page">
+    <header>
+        <h1>📂 Chat with Your Documents</h1>
+        <p>TF-IDF retrieval + local <strong>FLAN-T5 small</strong> model. No external API keys.</p>
+    </header>
+
+    <main class="layout">
+        <!-- Left: Upload & Index -->
+        <section class="card">
+            <h2>Upload &amp; Index Documents</h2>
+            <p class="hint">Supported: <strong>PDF, TXT, CSV, DOCX</strong></p>
+
+            <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+                <label class="file-upload">
+                    <span>Choose files</span>
+                    <input type="file" name="documents" multiple>
+                </label>
+
+                <button type="submit" class="btn primary">📥 Process &amp; Build Index</button>
+            </form>
+
+            {% if has_index %}
+            <p class="status success">✅ Index ready. You can ask questions now.</p>
+            {% else %}
+            <p class="status">ℹ️ No index built yet.</p>
+            {% endif %}
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <ul class="flash-list">
+                {% for category, msg in messages %}
+                  <li class="flash {{ category }}">{{ msg }}</li>
+                {% endfor %}
+                </ul>
+              {% endif %}
+            {% endwith %}
+        </section>
+
+        <!-- Right: Q&A -->
+        <section class="card">
+            <h2>Ask a Question</h2>
+            <form action="{{ url_for('ask') }}" method="post" class="qa-form">
+                <input
+                    type="text"
+                    name="question"
+                    placeholder="e.g. What is Python used for?"
+                    value="{{ question or '' }}"
+                    class="input"
+                    autocomplete="off"
+                >
+                <button type="submit" class="btn secondary">🧠 Ask</button>
+            </form>
+
+            <div class="answer-block">
+                <h3>Answer</h3>
+                {% if answer %}
+                    <p class="answer">{{ answer }}</p>
+                {% else %}
+                    <p class="placeholder">No answer yet. Upload docs and ask something.</p>
+                {% endif %}
+            </div>
+
+            {% if sources %}
+            <div class="sources">
+                <h3>Sources</h3>
+                <ul>
+                    {% for s in sources %}
+                        <li>
+                            <span class="source-file">{{ s.source }}</span>
+                            <span class="chip">Chunk: {{ s.chunk_id }}</span>
+                            <span class="chip">Similarity: {{ "%.3f"|format(s.score) }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+
+    <footer>
+        <p>Built with Flask · scikit-learn · HuggingFace Transformers</p>
+    </footer>
+</div>
+</body>
+</html>
